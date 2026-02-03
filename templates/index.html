@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Agentic AI Assistant</title>
+
+  <!-- Mobile Responsive -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+<body>
+
+  <div class="container">
+    <div class="card neon-border">
+
+      <h1>🤖 Agentic AI Assistant</h1>
+      <p class="subtitle">Speak • Understand • Respond</p>
+
+      <button id="speakBtn" onclick="startListening()">🎤 Speak</button>
+
+      <div class="text-input">
+        <input
+          type="text"
+          id="textCommand"
+          placeholder="Type a command... (eg: open youtube)"
+          autocomplete="off"
+        />
+        <button onclick="sendTextCommand()">➤</button>
+      </div>
+
+      <div id="siri" class="siri hidden"></div>
+
+      <div id="waveform" class="wave hidden">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+
+      <div id="listening" class="listening hidden">
+        <span></span><span></span><span></span>
+        <p>Listening...</p>
+      </div>
+
+      <div class="chat-area">
+
+        <div id="userBox" class="chat user hidden">
+          <b>You</b>
+          <p id="userText"></p>
+        </div>
+
+        <div id="aiBox" class="chat ai hidden">
+          <b>Assistant</b>
+          <p id="aiText"></p>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JS -->
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>
