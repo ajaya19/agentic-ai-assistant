@@ -1,13 +1,6 @@
 from flask import Flask, render_template, request, jsonify
-import webbrowser, datetime, os, re, time, subprocess, random
-import psutil
-from plyer import notification
+import datetime, os, re, time, random
 import requests
-import ctypes
-
-# 🔥 NEW IMPORTS (ADD ONLY)
-import speech_recognition as sr
-import threading
 
 # =========================
 # APP CONFIG
@@ -23,7 +16,7 @@ assistant_state = {
     "youtube_playing": False,
     "listening": True,
     "notes": [],
-    "wake_active": True   # 🔥 ADD
+    "wake_active": True
 }
 
 # =========================
@@ -46,9 +39,6 @@ def detect_intent(text):
     if "time" in text: return "time"
     if "date" in text: return "date"
     if any(x in text for x in ["+", "-", "*", "/"]): return "math"
-    if "mute" in text: return "mute"
-    if "unmute" in text: return "unmute"
-    if "lock" in text: return "lock"
     if "joke" in text: return "joke"
     if "stop listening" in text: return "stop"
     return "unknown"
@@ -119,59 +109,43 @@ def command():
     # OPEN
     # =========================
     if intent == "open" and entity:
-        webbrowser.open(websites.get(entity))
         assistant_state["current_site"] = entity
-        return jsonify({"reply": f"{entity} opened."})
+        return jsonify({
+            "reply": f"{entity} opened.",
+            "url": websites.get(entity)
+        })
 
     # =========================
-    # SEARCH (SMART YOUTUBE)
+    # SEARCH
     # =========================
     if intent == "search":
         query = text.replace("search", "").strip()
         assistant_state["last_search"] = query
 
         if assistant_state["current_site"] == "youtube":
-            webbrowser.open(
-                f"https://www.youtube.com/results?search_query={query}"
-            )
-            return jsonify({"reply": f"Searching {query} on YouTube."})
+            return jsonify({
+                "reply": f"Searching {query} on YouTube.",
+                "url": f"https://www.youtube.com/results?search_query={query}"
+            })
 
-        webbrowser.open(f"https://google.com/search?q={query}")
         assistant_state["current_site"] = "google"
-        return jsonify({"reply": f"Searching {query} on Google."})
+        return jsonify({
+            "reply": f"Searching {query} on Google.",
+            "url": f"https://google.com/search?q={query}"
+        })
 
     # =========================
-    # PLAY (AUTO FIRST VIDEO)
+    # PLAY (WEB SAFE)
     # =========================
     if intent == "play":
         query = text.replace("play", "").strip()
         assistant_state["current_site"] = "youtube"
         assistant_state["youtube_playing"] = True
 
-        webbrowser.open(
-            f"https://www.youtube.com/results?search_query={query}"
-        )
-
-        time.sleep(4)
-        pyautogui.press("tab", presses=7)
-        pyautogui.press("enter")
-
-        return jsonify({"reply": f"Playing {query} on YouTube."})
-
-    # =========================
-    # YOUTUBE CONTROLS
-    # =========================
-    if intent == "pause":
-        pyautogui.press("space")
-        return jsonify({"reply": "Paused."})
-
-    if intent == "resume":
-        pyautogui.press("space")
-        return jsonify({"reply": "Resumed."})
-
-    if intent == "next":
-        pyautogui.hotkey("shift", "n")
-        return jsonify({"reply": "Next video."})
+        return jsonify({
+            "reply": f"Playing {query} on YouTube.",
+            "url": f"https://www.youtube.com/results?search_query={query}"
+        })
 
     # =========================
     # BASIC FEATURES
@@ -181,18 +155,6 @@ def command():
 
     if intent == "date":
         return jsonify({"reply": datetime.date.today().strftime("%d %B %Y")})
-
-    if intent == "mute":
-        pyautogui.press("volumemute")
-        return jsonify({"reply": "Muted."})
-
-    if intent == "unmute":
-        pyautogui.press("volumemute")
-        return jsonify({"reply": "Unmuted."})
-
-    if intent == "lock":
-        ctypes.windll.user32.LockWorkStation()
-        return jsonify({"reply": "System locked."})
 
     if intent == "joke":
         return jsonify({"reply": random.choice([
@@ -208,46 +170,7 @@ def command():
     return jsonify({"reply": ai_reply})
 
 # =========================
-# 🔊 CONTINUOUS WAKE WORD (FIXED)
-# =========================
-def wake_word_listener():
-    recognizer = sr.Recognizer()
-    mic = sr.Microphone()
-
-    recognizer.energy_threshold = 300
-    recognizer.pause_threshold = 0.8
-
-    print("🎧 Continuous wake word active – say 'hey agent'")
-
-    while True:
-        if not assistant_state["wake_active"]:
-            time.sleep(1)
-            continue
-
-        try:
-            with mic as source:
-                audio = recognizer.listen(source, phrase_time_limit=5)
-
-            text = recognizer.recognize_google(audio).lower()
-            print("Heard:", text)
-
-            if text.startswith("hey agent"):
-                cmd = text.replace("hey agent", "").strip()
-
-                if cmd:
-                    requests.post(
-                        "http://127.0.0.1:5000/command",
-                        json={"text": cmd},
-                        timeout=5
-                    )
-
-        except:
-            pass
-
-# =========================
 # RUN SERVER
 # =========================
 if __name__ == "__main__":
-    t = threading.Thread(target=wake_word_listener, daemon=True)
-    t.start()
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
