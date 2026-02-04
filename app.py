@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, jsonify
 import webbrowser, datetime, os, re, time, subprocess, random
-import pyautogui
 import psutil
 from plyer import notification
 import requests
@@ -251,8 +250,4 @@ def wake_word_listener():
 if __name__ == "__main__":
     t = threading.Thread(target=wake_word_listener, daemon=True)
     t.start()
-    import os
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)
